@@ -1,15 +1,11 @@
-const joi = require('joi')
+const Joi = require("joi");
 
-const contactSchema = joi.object({
-	name: joi.string().min(3),
-	email: joi.string().email(),
-	phone: joi.string().min(5),
-})
+const contactSchema = Joi.object({
+  name: Joi.string().min(1).max(30).required(),
+  email: Joi.string().required(),
+  phone: Joi.number().integer().required(),
+});
 
-const validator = schema => body => {
-	return schema.validate(body)
-}
-
-const contactValidator = validator(contactSchema)
-
-module.exports = { contactValidator }
+module.exports = {
+  contactSchema,
+};
