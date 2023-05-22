@@ -1,4 +1,4 @@
-const service = require('../service/contacts')
+const service = require('../service/')
 const { contactValidator } = require('./../utils/validators/validator')
 
 const getAll = async (req, res) => {
