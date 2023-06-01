@@ -1,6 +1,6 @@
-const mongoose = require('mongoose')
-const { Schema } = mongoose
-const bCrypt = require('bcryptjs')
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
+const bCrypt = require('bcryptjs');
 
 const userSchema = new Schema(
 	{
@@ -22,26 +22,29 @@ const userSchema = new Schema(
 			type: String,
 			default: null,
 		},
+		avatarURL: {
+			type: String,
+		},
 		owner: {
 			type: Schema.Types.ObjectId,
 			ref: 'user',
 		},
 	},
 	{ versionKey: false, timestamp: true }
-)
+);
 
 userSchema.methods.setPassword = function (password) {
-	this.password = bCrypt.hashSync(password, bCrypt.genSaltSync(6))
-}
+	this.password = bCrypt.hashSync(password, bCrypt.genSaltSync(6));
+};
 
 userSchema.methods.validPassword = function (password) {
-	return bCrypt.compareSync(password, this.password)
-}
+	return bCrypt.compareSync(password, this.password);
+};
 
 userSchema.methods.setToken = function (token) {
-	this.token = token
-}
+	this.token = token;
+};
 
-const User = mongoose.model('User', userSchema, 'users')
+const User = mongoose.model('User', userSchema, 'users');
 
-module.exports = User
+module.exports = User;

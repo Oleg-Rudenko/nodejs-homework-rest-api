@@ -1,8 +1,8 @@
-const passport = require('passport')
-const passportJWT = require('passport-jwt')
-const User = require('../service/shema/user')
-require('dotenv').config()
-const secret = process.env.SECRET
+const passport = require('passport');
+const passportJWT = require('passport-jwt');
+const User = require('../service/schemas/user');
+require('dotenv').config();
+const secret = process.env.SECRET;
 
 const ExtractJWT = passportJWT.ExtractJwt
 const Strategy = passportJWT.Strategy
@@ -24,9 +24,9 @@ passport.use(
 	})
 )
 
-const auth = (req, res, next) => {
-	passport.authenticate('jwt', { session: false }, (err, user) => {
-		if (!user || err) {
+const authorizeUser = (req, res, next) => {
+	passport.authenticate('jwt', { session: false }, (error, user) => {
+		if (!user || error) {
 			return res.status(401).json({
 				status: 'error',
 				code: 401,
@@ -39,4 +39,4 @@ const auth = (req, res, next) => {
 	})(req, res, next)
 }
 
-module.exports = { auth }
+module.exports = { authorizeUser }
