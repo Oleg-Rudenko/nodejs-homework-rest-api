@@ -1,4 +1,6 @@
+const { nanoid } = require('nanoid/non-secure');
 const { userValidator } = require('./../utils/validators/validator');
+const sgMail = require('../utils/email/sgMail');
 const service = require('../service/users');
 const jwt = require('jsonwebtoken');
 const User = require('../service/schemas/user');
@@ -15,7 +17,6 @@ const register = async (req, res, next) => {
 	if (error) return res.status(400).json({ message: error.details[0].message });
 	const { email, password, subscription } = req.body;
 	const user = await service.getUser({ email });
-
 	if (user) {
 		return res.status(409).json({
 			status: 'error',
@@ -31,9 +32,13 @@ const register = async (req, res, next) => {
 			d: 'mm',
 		});
 
-		const newUser = new User({ email, password, subscription, avatarURL });
+		const verificationToken = nanoid();
+		const newUser = new User({ email, password, subscription, avatarURL, verificationToken });
 		newUser.setPassword(password);
 		await newUser.save();
+		if (verificationToken) {
+			sgMail.sendVerificationToken(email, verificationToken);
+		}
 		res.status(201).json({
 			status: 'success',
 			code: 201,
@@ -53,7 +58,7 @@ const login = async (req, res, next) => {
 	const { email, password } = req.body;
 	const user = await service.getUser({ email });
 
-	if (!user || !user.validPassword(password)) {
+	if (!user || !user.validPassword(password) || !user.verify) {
 		return res.status(401).json({
 			status: 'error',
 			code: 401,
@@ -218,6 +223,52 @@ const deleteUserByMail = async (req, res) => {
 	}
 };
 
+const verifyUserByToken = async (req, res) => {
+	try {
+		const token = req.params.verificationToken;
+		const user = await service.getUser({ verificationToken: token });
+		if (!user) {
+			return res.status(404).json({ message: 'Not found user' });
+		} else {
+			await service.updateUserVerification(user.id);
+			res.status(200).json({ message: 'Verification successful' });
+		}
+	} catch (error) {
+		console.log(`Error: ${error.message}`.red);
+	}
+};
+
+const resendVerificationMail = async (req, res) => {
+	const { email } = req.body;
+	if (!email) {
+		res.status(400).json({ message: 'missing required field email' });
+	}
+	const user = await service.getUser({ email });
+
+	if (!user) {
+		return res.status(400).json({
+			status: 'error',
+			code: 400,
+			message: 'Incorrect email ',
+		});
+	}
+	if (user.validate) {
+		return res.status(400).json({
+			status: 'error',
+			code: 400,
+			message: 'Verification has already been passed',
+		});
+	}
+	if (!user.validate) {
+		sgMail.sendVerificationToken(email, user.verificationToken);
+		return res.status(400).json({
+			status: 'error',
+			code: 400,
+			message: 'Verification has already been passed',
+		});
+	}
+};
+
 module.exports = {
 	register,
 	login,
@@ -227,4 +278,6 @@ module.exports = {
 	updateSubscription,
 	updateAvatar,
 	deleteUserByMail,
+	verifyUserByToken,
+	resendVerificationMail,
 };
